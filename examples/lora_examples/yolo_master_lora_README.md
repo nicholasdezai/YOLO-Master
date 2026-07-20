@@ -1,6 +1,6 @@
 # YOLO-Master-EsMoE-N LoRA 高效微调适配指南
 
-本指南记录了 YOLO-Master-EsMoE-N 在两个截然不同的垂类场景上的 LoRA 微调实验，覆盖了配置说明、rank 扫描结果、最佳推荐以及常见陷阱。
+本指南记录了 YOLO-Master-EsMoE-N 在两个截然不同的垂类场景上的 LoRA 微调实验，覆盖了配置说明、rank 扫描结果、最佳推荐以及常见陷阱，并预留了 `r=32` 的高 rank 扩展实验位。
 
 ## 场景概览
 
@@ -28,14 +28,15 @@ examples/lora_examples/
   yolo_master_visdrone_lora.yaml       # VisDrone LoRA 训练配置
   yolo_master_brain_tumor_lora.yaml    # Brain Tumor LoRA 训练配置
   yolo_master_lora_README.md           # 本指南
-  yolo_master_lora_results.csv         # 完整六轮实验结果
-  run_lora_visdrone_sweep.sh           # VisDrone rank 扫描脚本 (bash)
-  run_lora_brain_tumor_sweep.sh        # Brain Tumor rank 扫描脚本 (bash)
-  run_yolo_master_lora_rank_sweep.py   # 统一 rank 扫描脚本 (Python)
+  yolo_master_lora_results.csv         # 当前已完成的 6 轮实验结果（r=4/8/16）
+  yolo_master_lora_rank_sweep_results.csv # rank 扫描摘要（含 r=32 预留位）
+  run_lora_visdrone_sweep.sh           # VisDrone rank 扫描脚本 (bash, r=4/8/16/32)
+  run_lora_brain_tumor_sweep.sh        # Brain Tumor rank 扫描脚本 (bash, r=4/8/16/32)
+  run_yolo_master_lora_rank_sweep.py   # 统一 rank 扫描脚本 (Python, 默认含 r=32)
 
 runs/lora_examples/
-  brain_tumor_r4/  brain_tumor_r8/  brain_tumor_r16/
-  visdrone_r4/     visdrone_r8/     visdrone_r16/
+  brain_tumor_r4/  brain_tumor_r8/  brain_tumor_r16/  brain_tumor_r32/
+  visdrone_r4/     visdrone_r8/     visdrone_r16/     visdrone_r32/
 ```
 
 ## 实验设置
@@ -90,13 +91,13 @@ lora_exclude_modules: ["router", "routing", "gate", "gating"]
 
 ## 训练命令
 
-### 方式一：Shell 脚本（推荐 — 串行执行便于资源对比）
+### 方式一：Shell 脚本（推荐，默认串行执行，现已包含 r=32）
 
 ```bash
-# VisDrone rank 扫描 (r=4, 8, 16)
+# VisDrone rank 扫描 (r=4, 8, 16, 32)
 bash examples/lora_examples/run_lora_visdrone_sweep.sh
 
-# Brain Tumor rank 扫描 (r=4, 8, 16)
+# Brain Tumor rank 扫描 (r=4, 8, 16, 32)
 bash examples/lora_examples/run_lora_brain_tumor_sweep.sh
 ```
 
@@ -106,6 +107,10 @@ bash examples/lora_examples/run_lora_brain_tumor_sweep.sh
 # 单场景扫描
 python examples/lora_examples/run_yolo_master_lora_rank_sweep.py --scene brain_tumor --device 0
 python examples/lora_examples/run_yolo_master_lora_rank_sweep.py --scene visdrone --device 0
+
+# 仅补跑 rank=32
+python examples/lora_examples/run_yolo_master_lora_rank_sweep.py --scene brain_tumor --ranks 32 --device 0
+python examples/lora_examples/run_yolo_master_lora_rank_sweep.py --scene visdrone --ranks 32 --device 0
 
 # 全部场景
 python examples/lora_examples/run_yolo_master_lora_rank_sweep.py --scene all --device 0
@@ -128,6 +133,13 @@ yolo train cfg=examples/lora_examples/yolo_master_brain_tumor_lora.yaml \
 # 命令行覆盖参数
 yolo train cfg=examples/lora_examples/yolo_master_visdrone_lora.yaml \
     lora_r=16 lora_alpha=32 epochs=50 batch=4 fraction=0.5
+
+# rank=32 高 rank 扩展
+yolo train cfg=examples/lora_examples/yolo_master_visdrone_lora.yaml \
+    lora_r=32 lora_alpha=64 device=0
+
+yolo train cfg=examples/lora_examples/yolo_master_brain_tumor_lora.yaml \
+    lora_r=32 lora_alpha=64 device=0
 ```
 
 ## 实验结果
@@ -157,6 +169,22 @@ yolo train cfg=examples/lora_examples/yolo_master_visdrone_lora.yaml \
 
 > **注意：** VisDrone 使用 `fraction=0.2`，结果应视为部分数据的 LoRA 微调效果对比，不应作为完整 VisDrone benchmark 数据。
 
+## Rank=32 扩展实验位
+
+当前仓库已经补齐 `r=32` 的配置入口、扫描脚本和结果占位，但截至 **2026-07-20**，`r=32` 的真实训练结果尚未写入本仓库。原因很直接：这部分指标必须在相同硬件、相同 epoch、相同数据比例下重新实跑，不能从 `r=16` 外推。
+
+| 数据集 | Run | Rank | Alpha | Epochs | mAP50 | mAP50-95 | 可训练参数量 | 训练时间 | 峰值显存 | 状态 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Brain Tumor | `brain_tumor_r32` | 32 | 64 | 40 | TBD | TBD | TBD | TBD | TBD | 待训练回填 |
+| VisDrone | `visdrone_r32` | 32 | 64 | 30 | TBD | TBD | TBD | TBD | TBD | 待训练回填 |
+
+建议在补跑 `r=32` 时保持以下约束不变，确保与已有 `r=4/8/16` 数据可比：
+
+- Brain Tumor: `epochs=40`, `imgsz=640`, `batch=16`, `fraction=1.0`
+- VisDrone: `epochs=30`, `imgsz=768`, `batch=8`, `fraction=0.2`
+- 两个场景都保持 `lora_alpha=2*r`, `lora_use_rslora=True`, `lora_gradient_checkpointing=True`
+- 继续排除 `router` / `routing` / `gate` / `gating`，不要把 rank 扫描和路由消融混在一起
+
 ## Rank 推荐
 
 ### Brain Tumor（稀疏医疗检测）
@@ -164,13 +192,13 @@ yolo train cfg=examples/lora_examples/yolo_master_visdrone_lora.yaml \
 - **推荐 rank：`r=16`**（当前最佳 mAP50-95）
 - **备选 rank：`r=8`**（更快迭代，精度损失约 8% mAP50-95）
 - rank 从 8 到 16 的提升有限但可测量，显存基本持平（3.99G → 4.03G）
-- 小数据集上 rank 过低（r=4）容量不足；rank 过高（>16）可能过拟合
+- 小数据集上 rank 过低（r=4）容量不足；`r=32` 应作为高 rank 消融单独验证过拟合风险
 
 ### VisDrone（密集航拍检测）
 
 - **推荐 rank：`r=16`**（当前最佳 mAP50-95）
 - rank 提升带来的收益在密集小目标场景更明显（r=16 的 mAP50 是 r=4 的 1.76 倍）
-- 更大 rank（如 r=32）可能进一步提升，但需权衡训练时间和显存
+- 更大 rank（如 `r=32`）已纳入脚本默认扫描范围，但仍需实测权衡训练时间和显存
 - 如需更快迭代速度，r=8 是合理的折中选择
 
 > **通用建议：** 保持 `lora_alpha = 2 * lora_r`，启用 `lora_use_rslora=True` 以保证高 rank 时的缩放稳定性。

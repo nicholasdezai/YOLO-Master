@@ -13,6 +13,7 @@ EXPERIMENTS=(
   "4:8:visdrone_r4"
   "8:16:visdrone_r8"
   "16:32:visdrone_r16"
+  "32:64:visdrone_r32"
 )
 # ================================================
 

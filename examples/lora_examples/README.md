@@ -29,7 +29,7 @@ We provide optimized LoRA configurations for the following model families:
 | 密集航拍检测 | VisDrone | `yolo_master_visdrone_lora.yaml` | [yolo_master_lora_README.md](yolo_master_lora_README.md) |
 | 稀疏医疗检测 | Brain Tumor | `yolo_master_brain_tumor_lora.yaml` | [yolo_master_lora_README.md](yolo_master_lora_README.md) |
 
-该方案包含 rank 扫描对比（r=4/8/16）、MoE 路由层 LoRA 策略、目标模块选择指导和常见陷阱说明。详见 [YOLO-Master LoRA 适配指南](yolo_master_lora_README.md)。
+该方案包含 rank 扫描对比（r=4/8/16/32）、MoE 路由层 LoRA 策略、目标模块选择指导和常见陷阱说明。详见 [YOLO-Master LoRA 适配指南](yolo_master_lora_README.md)。
 
 ```bash
 # 快速开始

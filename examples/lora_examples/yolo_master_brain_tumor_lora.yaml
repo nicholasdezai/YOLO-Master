@@ -20,7 +20,7 @@ save_period: -1 # (int) save checkpoint every N epochs; disabled if < 1
 cache: False # (bool | str) cache images in RAM (True/'ram') or on 'disk' to speed dataloading; False disables
 workers: 4 # (int) dataloader workers (per RANK if DDP)
 project: runs/lora_examples # (str, optional) project name for results root
-name: yolo_master_brain_tumor_lora_r4 # (str, optional) experiment name; override for r4/r8/r16 sweeps
+name: yolo_master_brain_tumor_lora_r4 # (str, optional) experiment name; override for r4/r8/r16/r32 sweeps
 exist_ok: False # (bool) overwrite existing 'project/name' if True
 pretrained: True # (bool | str) use pretrained weights (bool) or load weights from path (str)
 optimizer: auto # (str) optimizer: SGD, Adam, Adamax, AdamW, NAdam, RAdam, RMSProp, or auto
@@ -51,7 +51,7 @@ dnn: False # (bool) use OpenCV DNN for ONNX inference
 plots: True # (bool) save plots and images during train/val
 
 # LoRA settings --------------------------------------------------------------------------------------------------------
-lora_r: 4 # (int) conservative default rank for small medical data; compare r=4,8,16 with lora_alpha=2*r
+lora_r: 4 # (int) conservative default rank for small medical data; compare r=4,8,16,32 with lora_alpha=2*r
 lora_alpha: 8 # (int) LoRA alpha
 lora_dropout: 0.05 # (float) stronger regularization for the small brain-tumor dataset
 lora_bias: "none" # (str) LoRA bias type: "none", "all", "lora_only"
@@ -70,14 +70,14 @@ lora_save_adapters: True # (bool) Save LoRA adapters
 lora_adapter_dir: "lora_adapter" # (str) Directory name for adapters
 lora_auto_r_ratio: 0.0 # (float) Auto calculate LoRA rank based on params ratio
 lora_use_dora: False # (bool) Enable DoRA (Weight-Decomposed Low-Rank Adaptation)
-lora_use_rslora: True # (bool) Enable RS-LoRA scaling for better high-rank stability
+lora_use_rslora: True # (bool) Enable RS-LoRA scaling for better high-rank stability, especially when extending to r=32
 lora_init_lora_weights: "gaussian" # (str) PEFT Conv2d-compatible init; PiSSA/OLoRA are Linear-oriented
 lora_type: "lora" # (str) PEFT type: "lora", "loha", "lokr"
 lora_quantization: "none" # (str) Quantization type: "none", "4bit", "8bit" (Requires bitsandbytes)
 lora_include_moe: True # (bool) include EsMoE expert convolutions as adaptation targets
 lora_include_attention: False # (bool) YOLO-Master-N detection config is Conv/MoE-heavy; attention targets are not required
 lora_only_backbone: False # (bool) allow neck convolutions; final Detect/DFL layers remain filtered by LoRA safety logic
-lora_only_3x3: False # (bool) skip 1x1 convs to keep adapter count low on a small dataset
+lora_only_3x3: False # (bool) include 1x1 expert projections; many MoE adaptation paths live outside 3x3 convs
 # MoE routing policy: routing/gate layers are NOT included in LoRA targets.
 # Rationale: small medical LoRA runs should adapt visual/expert convolutions without changing
 # expert-assignment dynamics; routing-LoRA should be tested only as a separate ablation.

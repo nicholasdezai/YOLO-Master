@@ -181,7 +181,7 @@ def write_summary(rows: Iterable[dict], output: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scene", choices=[*SCENES.keys(), "all"], default="all")
-    parser.add_argument("--ranks", nargs="+", type=int, default=[4, 8, 16])
+    parser.add_argument("--ranks", nargs="+", type=int, default=[4, 8, 16, 32])
     parser.add_argument("--device", default="0")
     parser.add_argument("--project", default="runs/lora_rank_sweeps")
     parser.add_argument("--output", default="examples/lora_examples/yolo_master_lora_rank_sweep_results.csv")
@@ -210,10 +210,16 @@ def main() -> None:
             ]
             log_path = Path(args.log_dir) / f"{name}.log"
             minutes, return_code = run_command_with_log(cmd, log_path, args.dry_run)
+            if args.dry_run:
+                continue
             rows.append(summarize_run(scene, rank, run_dir, minutes, return_code, log_path))
             write_summary(rows, Path(args.output))
             if return_code != 0:
                 raise SystemExit(return_code)
+
+    if args.dry_run:
+        print("Dry run completed; no summary CSV was written.")
+        return
 
     write_summary(rows, Path(args.output))
     print(f"Wrote summary to {args.output}")

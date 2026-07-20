@@ -13,6 +13,7 @@ EXPERIMENTS=(
   "4:8:brain_tumor_r4"
   "8:16:brain_tumor_r8"
   "16:32:brain_tumor_r16"
+  "32:64:brain_tumor_r32"
 )
 # ================================================
 
